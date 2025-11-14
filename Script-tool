@@ -1,0 +1,129 @@
+# Scr-- =========================================================
+-- TOOLS PERSONALIZADAS (USO SEGURO NO SEU PRÓPRIO JOGO)
+-- =========================================================
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+-- Aguarda personagem
+local function getChar()
+    local char = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+    return char
+end
+
+local char = getChar()
+
+-- Pasta onde as tools serão colocadas
+local backpack = LocalPlayer:WaitForChild("Backpack")
+
+------------------------------------------------------------
+-- 🌀 TP TOOL
+------------------------------------------------------------
+local tpTool = Instance.new("Tool")
+tpTool.Name = "TP Tool"
+tpTool.RequiresHandle = false
+
+tpTool.Activated:Connect(function()
+    local mouse = LocalPlayer:GetMouse()
+    if mouse.Hit then
+        local root = char:FindFirstChild("HumanoidRootPart")
+        if root then
+            root.CFrame = CFrame.new(mouse.Hit.Position + Vector3.new(0, 3, 0))
+        end
+    end
+end)
+
+tpTool.Parent = backpack
+
+------------------------------------------------------------
+-- ⚡ SPEED TOOL
+------------------------------------------------------------
+local speedTool = Instance.new("Tool")
+speedTool.Name = "Speed Tool"
+speedTool.RequiresHandle = false
+
+local normalSpeed = 16
+local fastSpeed = 267
+
+speedTool.Equipped:Connect(function()
+    local hum = char:FindFirstChildOfClass("Humanoid")
+    if hum then
+        hum.WalkSpeed = fastSpeed
+    end
+end)
+
+speedTool.Unequipped:Connect(function()
+    local hum = char:FindFirstChildOfClass("Humanoid")
+    if hum then
+        hum.WalkSpeed = normalSpeed
+    end
+end)
+
+speedTool.Parent = backpack
+
+------------------------------------------------------------
+-- 👁️ ESP TOOL
+------------------------------------------------------------
+local espTool = Instance.new("Tool")
+espTool.Name = "ESP Tool"
+espTool.RequiresHandle = false
+
+local espAtivo = false
+local espList = {} -- guarda os ESPs criados
+
+-- cria ESP em um jogador
+local function criarESP(player)
+    if not player.Character then return end
+    local head = player.Character:FindFirstChild("Head")
+    if not head then return end
+    if head:FindFirstChild("ESP") then return end
+
+    local bill = Instance.new("BillboardGui", head)
+    bill.Name = "ESP"
+    bill.Size = UDim2.new(0, 100, 0, 50)
+    bill.AlwaysOnTop = true
+    bill.Adornee = head
+
+    local txt = Instance.new("TextLabel", bill)
+    txt.Size = UDim2.new(1,0,1,0)
+    txt.BackgroundTransparency = 1
+    txt.TextColor3 = Color3.new(1,0,0)
+    txt.TextScaled = true
+    txt.Text = player.Name
+
+    espList[player] = bill
+end
+
+-- remove ESP
+local function removerESP()
+    for _, gui in pairs(espList) do
+        if gui and gui.Parent then gui:Destroy() end
+    end
+    espList = {}
+end
+
+espTool.Equipped:Connect(function()
+    espAtivo = true
+    for _, plr in ipairs(Players:GetPlayers()) do
+        if plr ~= LocalPlayer then
+            criarESP(plr)
+        end
+    end
+end)
+
+espTool.Unequipped:Connect(function()
+    espAtivo = false
+    removerESP()
+end)
+
+-- ESP reaplica quando alguém respawna
+Players.PlayerAdded:Connect(function(plr)
+    plr.CharacterAdded:Connect(function()
+        if espAtivo then
+            task.wait(1)
+            criarESP(plr)
+        end
+    end)
+end)
+
+espTool.Parent = backpack
